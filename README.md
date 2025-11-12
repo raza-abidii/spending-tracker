@@ -52,12 +52,44 @@ The application will be available at `http://localhost:8080`
 
 ## Features
 
-- ✅ Add and track expenses
+- ✅ Add and track expenses with custom dates
 - ✅ Categorize expenses (food, clothes, electronics, etc.)
 - ✅ View expense summary and statistics
 - ✅ Local storage persistence
 - ✅ Responsive design
 - ✅ Delete expenses
+- ✅ PWA support - Install as mobile app
+- ✅ Indian Rupees (₹) currency
+
+## Install as Mobile App
+
+This app can be installed on your phone's homescreen for a native app-like experience!
+
+### On Android (Chrome/Edge):
+
+1. Open the app in Chrome or Edge browser
+2. Tap the **menu icon** (⋮) in the top right corner
+3. Select **"Add to Home screen"** or **"Install app"**
+4. Confirm by tapping **"Add"** or **"Install"**
+5. The app icon will appear on your homescreen
+
+**Alternative:** Chrome may show an automatic install banner at the bottom - just tap "Install"
+
+### On iOS (Safari):
+
+1. Open the app in Safari browser
+2. Tap the **Share button** (square with arrow pointing up) at the bottom
+3. Scroll down and tap **"Add to Home Screen"**
+4. Edit the name if desired, then tap **"Add"**
+5. The app icon will appear on your homescreen
+
+### Benefits of Installing:
+
+- 📱 Launch directly from homescreen like a native app
+- 🚀 Faster load times
+- 📴 Works offline after first visit
+- 🎨 Full screen experience without browser UI
+- 🔔 Better mobile experience
 
 ## License
 
