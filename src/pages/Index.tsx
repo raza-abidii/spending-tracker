@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { ExpenseForm, Expense } from "@/components/ExpenseForm";
+import { ExpenseForm, Expense, ExpenseCategory } from "@/components/ExpenseForm";
 import { ExpenseList } from "@/components/ExpenseList";
 import { ExpenseSummary } from "@/components/ExpenseSummary";
+import { ExpenseChart } from "@/components/ExpenseChart";
 import { Wallet } from "lucide-react";
 import { useAuth } from "@/context/AuthProvider";
 import { supabase } from "@/lib/supabaseClient";
@@ -15,6 +16,7 @@ const Index = () => {
   const { user, signOut } = useAuth();
   const [syncing, setSyncing] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | null>(null);
   const navigate = useNavigate();
 
   const handleSaveToCloud = async () => {
@@ -264,6 +266,15 @@ const Index = () => {
           <ExpenseSummary expenses={expenses} />
         </div>
 
+        {/* Expense Chart */}
+        <div className="mb-8">
+          <ExpenseChart 
+            expenses={expenses}
+            selectedCategory={selectedCategory}
+            onCategorySelect={setSelectedCategory}
+          />
+        </div>
+
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Form */}
@@ -290,9 +301,17 @@ const Index = () => {
 
           {/* List */}
           <div className="lg:col-span-2">
-            <h2 className="text-xl font-semibold mb-4 text-foreground">Recent Expenses</h2>
+            <h2 className="text-xl font-semibold mb-4 text-foreground">
+              {selectedCategory ? (
+                <span>
+                  Expenses - <span className="capitalize">{selectedCategory}</span> Category
+                </span>
+              ) : (
+                "Recent Expenses"
+              )}
+            </h2>
             <ExpenseList 
-              expenses={expenses} 
+              expenses={selectedCategory ? expenses.filter(e => e.category === selectedCategory) : expenses} 
               onDeleteExpense={handleDeleteExpense}
               onEditExpense={handleEditExpense}
             />
