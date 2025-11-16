@@ -14,6 +14,7 @@ import { expenseToRow, rowToExpense } from "@/lib/dbHelpers";
 const Index = () => {
   const { user, signOut } = useAuth();
   const [syncing, setSyncing] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const navigate = useNavigate();
 
   const handleSaveToCloud = async () => {
@@ -166,8 +167,54 @@ const Index = () => {
     }
   };
 
-  const handleDeleteExpense = (id: string) => {
+  const handleDeleteExpense = async (id: string) => {
     setExpenses(expenses.filter((expense) => expense.id !== id));
+
+    // If user logged in, also delete from server
+    if (user) {
+      try {
+        const { error } = await supabase.from("expenses").delete().eq("id", id).eq("user_id", user.id);
+        if (error) {
+          console.error("Failed to delete expense from server:", error);
+          toast.error(`Failed to sync deletion: ${error.message}`);
+        } else {
+          console.log("Expense deleted from cloud successfully");
+        }
+      } catch (e) {
+        console.error("Exception deleting expense:", e);
+      }
+    }
+  };
+
+  const handleUpdateExpense = async (updatedExpense: Expense) => {
+    // Update locally
+    setExpenses(prev => prev.map(e => e.id === updatedExpense.id ? updatedExpense : e));
+    
+    // Clear editing state
+    setEditingExpense(null);
+
+    // If user logged in, also update on server
+    if (user) {
+      try {
+        const payload = expenseToRow(updatedExpense, user.id);
+        console.log("Updating expense in cloud:", payload);
+        const { error } = await supabase.from("expenses").update(payload).eq("id", updatedExpense.id).eq("user_id", user.id);
+        if (error) {
+          console.error("Failed to update expense on server:", error);
+          toast.error(`Failed to sync update: ${error.message}`);
+        } else {
+          console.log("Expense updated in cloud successfully");
+        }
+      } catch (e) {
+        console.error("Exception updating expense:", e);
+      }
+    }
+  };
+
+  const handleEditExpense = (expense: Expense) => {
+    setEditingExpense(expense);
+    // Scroll to form
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -221,14 +268,34 @@ const Index = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Form */}
           <div className="lg:col-span-1">
-            <h2 className="text-xl font-semibold mb-4 text-foreground">Add New Expense</h2>
-            <ExpenseForm onAddExpense={handleAddExpense} />
+            <h2 className="text-xl font-semibold mb-4 text-foreground">
+              {editingExpense ? "Edit Expense" : "Add New Expense"}
+            </h2>
+            {editingExpense && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setEditingExpense(null)}
+                className="mb-3 w-full"
+              >
+                Cancel Edit
+              </Button>
+            )}
+            <ExpenseForm 
+              onAddExpense={handleAddExpense} 
+              onUpdateExpense={handleUpdateExpense}
+              editingExpense={editingExpense}
+            />
           </div>
 
           {/* List */}
           <div className="lg:col-span-2">
             <h2 className="text-xl font-semibold mb-4 text-foreground">Recent Expenses</h2>
-            <ExpenseList expenses={expenses} onDeleteExpense={handleDeleteExpense} />
+            <ExpenseList 
+              expenses={expenses} 
+              onDeleteExpense={handleDeleteExpense}
+              onEditExpense={handleEditExpense}
+            />
           </div>
         </div>
       </div>

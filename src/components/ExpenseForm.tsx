@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,15 +27,17 @@ export interface Expense {
   productName: string;
   price: number;
   category: ExpenseCategory;
-  place: string;
+  place?: string;
   date: string;
 }
 
 interface ExpenseFormProps {
   onAddExpense: (expense: Omit<Expense, "id">) => void;
+  onUpdateExpense?: (expense: Expense) => void;
+  editingExpense?: Expense | null;
 }
 
-export const ExpenseForm = ({ onAddExpense }: ExpenseFormProps) => {
+export const ExpenseForm = ({ onAddExpense, onUpdateExpense, editingExpense }: ExpenseFormProps) => {
   const [productName, setProductName] = useState("");
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState<ExpenseCategory | "">("");
@@ -45,11 +47,30 @@ export const ExpenseForm = ({ onAddExpense }: ExpenseFormProps) => {
     return today.toISOString().split('T')[0];
   });
 
+  // Populate form when editing
+  useEffect(() => {
+    if (editingExpense) {
+      setProductName(editingExpense.productName);
+      setPrice(editingExpense.price.toString());
+      setCategory(editingExpense.category);
+      setPlace(editingExpense.place || "");
+      setDate(new Date(editingExpense.date).toISOString().split('T')[0]);
+    } else {
+      // Reset form when not editing
+      setProductName("");
+      setPrice("");
+      setCategory("");
+      setPlace("");
+      const today = new Date();
+      setDate(today.toISOString().split('T')[0]);
+    }
+  }, [editingExpense]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!productName || !price || !category || !place || !date) {
-      toast.error("Please fill in all fields");
+    if (!productName || !price || !category || !date) {
+      toast.error("Please fill in required fields (product name, price, category, date)");
       return;
     }
 
@@ -59,13 +80,28 @@ export const ExpenseForm = ({ onAddExpense }: ExpenseFormProps) => {
       return;
     }
 
-    onAddExpense({
-      productName,
-      price: priceNum,
-      category,
-      place,
-      date: new Date(date).toISOString(),
-    });
+    if (editingExpense && onUpdateExpense) {
+      // Update existing expense
+      onUpdateExpense({
+        ...editingExpense,
+        productName,
+        price: priceNum,
+        category,
+        place: place || undefined,
+        date: new Date(date).toISOString(),
+      });
+      toast.success("Expense updated successfully!");
+    } else {
+      // Add new expense
+      onAddExpense({
+        productName,
+        price: priceNum,
+        category,
+        place: place || undefined,
+        date: new Date(date).toISOString(),
+      });
+      toast.success("Expense added successfully!");
+    }
 
     // Reset form
     setProductName("");
@@ -74,8 +110,6 @@ export const ExpenseForm = ({ onAddExpense }: ExpenseFormProps) => {
     setPlace("");
     const today = new Date();
     setDate(today.toISOString().split('T')[0]);
-
-    toast.success("Expense added successfully!");
   };
 
   return (
@@ -124,10 +158,10 @@ export const ExpenseForm = ({ onAddExpense }: ExpenseFormProps) => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="place">Place</Label>
+          <Label htmlFor="place">Place (Optional)</Label>
           <Input
             id="place"
-            placeholder="e.g., Walmart"
+            placeholder="e.g., Walmart (optional)"
             value={place}
             onChange={(e) => setPlace(e.target.value)}
             className="transition-all focus:shadow-[var(--shadow-soft)]"
@@ -147,7 +181,7 @@ export const ExpenseForm = ({ onAddExpense }: ExpenseFormProps) => {
 
         <Button type="submit" className="w-full" size="lg">
           <Plus className="mr-2 h-4 w-4" />
-          Add Expense
+          {editingExpense ? "Update Expense" : "Add Expense"}
         </Button>
       </form>
     </Card>

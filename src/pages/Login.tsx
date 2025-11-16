@@ -1,50 +1,25 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthProvider";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabaseClient";
+import { useNavigate } from "react-router-dom";
 
 const LoginPage: React.FC = () => {
   const { user, signIn, signUp, signOut } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showDebug, setShowDebug] = useState(true);
-  const [lastError, setLastError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
-  const testConnection = async () => {
-    setLastError(null);
-    try {
-      const url = import.meta.env.VITE_SUPABASE_URL;
-      toast("Testing connection to " + url);
-      
-      // Test 1: Basic fetch to health endpoint (doesn't require auth)
-      const response = await fetch(url + '/rest/v1/', { 
-        method: 'GET',
-        mode: 'cors',
-        headers: {
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-        }
-      });
-      
-      if (response.ok || response.status === 401) {
-        // 401 is actually OK here - it means we reached the server
-        toast.success("✅ Connection successful! Server is reachable.");
-        setLastError("✅ Connection successful. Status: " + response.status);
-      } else {
-        toast.error("Connection failed: " + response.status);
-        setLastError(`HTTP ${response.status}: ${response.statusText}`);
-      }
-    } catch (err) {
-      console.error("Connection test failed:", err);
-      const msg = (err as any)?.message || String(err);
-      setLastError("❌ Connection test failed: " + msg);
-      toast.error("Connection test failed: " + msg);
+  // Redirect to home if already signed in
+  useEffect(() => {
+    if (user) {
+      navigate("/");
     }
-  };
+  }, [user, navigate]);
 
   const handleSignIn = async () => {
     if (!email || !password) {
@@ -53,23 +28,19 @@ const LoginPage: React.FC = () => {
     }
 
     setLoading(true);
-    setLastError(null);
     try {
       const res = await signIn(email, password);
       setLoading(false);
       if ((res as any).error) {
-        console.error("Sign in error:", res);
         const errMsg = (res as any).error.message || "Sign in failed";
-        setLastError(JSON.stringify(res, null, 2));
         toast.error(errMsg);
       } else {
-        toast.success("Signed in");
+        toast.success("Signed in successfully!");
+        // Redirect happens via useEffect when user state updates
       }
     } catch (err) {
       setLoading(false);
-      console.error("Sign in exception:", err);
       const errMsg = (err as any)?.message || String(err);
-      setLastError(errMsg);
       toast.error("Sign in failed: " + errMsg);
     }
   };
@@ -80,24 +51,27 @@ const LoginPage: React.FC = () => {
       return;
     }
 
+    // Validate password strength
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters long");
+      return;
+    }
+
     setLoading(true);
-    setLastError(null);
     try {
       const res = await signUp(email, password);
       setLoading(false);
       if ((res as any).error) {
-        console.error("Sign up error:", res);
         const errMsg = (res as any).error.message || "Sign up failed";
-        setLastError(JSON.stringify(res, null, 2));
         toast.error(errMsg);
       } else {
-        toast.success("Sign up successful. Check your email for confirmation if required.");
+        toast.success("Sign up successful! You can now sign in.");
+        // Clear form
+        setPassword("");
       }
     } catch (err) {
       setLoading(false);
-      console.error("Sign up exception:", err);
       const errMsg = (err as any)?.message || String(err);
-      setLastError(errMsg);
       toast.error("Sign up failed: " + errMsg);
     }
   };
@@ -105,58 +79,44 @@ const LoginPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="p-6 w-full max-w-md">
-        {!user ? (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-semibold">Sign in / Sign up</h2>
-            
-            {showDebug && (
-              <div className="p-3 bg-blue-50 rounded text-xs space-y-2 border border-blue-200">
-                <div><strong>Supabase URL:</strong> {import.meta.env.VITE_SUPABASE_URL || "❌ NOT SET"}</div>
-                <div><strong>Anon Key:</strong> {import.meta.env.VITE_SUPABASE_ANON_KEY ? `✅ ${import.meta.env.VITE_SUPABASE_ANON_KEY.slice(0,20)}...` : "❌ NOT SET"}</div>
-                <div><strong>Supabase client:</strong> {supabase ? "✅ Initialized" : "❌ Not initialized"}</div>
-                <div><strong>User:</strong> {user ? `✅ ${user.email}` : "Not signed in"}</div>
-                <div className="flex gap-2 mt-2">
-                  <Button variant="outline" size="sm" onClick={testConnection}>Test Connection</Button>
-                  <Button variant="ghost" size="sm" onClick={() => setShowDebug(false)}>Hide Debug</Button>
-                </div>
-              </div>
-            )}
-
-            {lastError && (
-              <div className="p-3 bg-red-50 text-red-800 rounded text-xs border border-red-200 max-h-40 overflow-auto">
-                <strong>Last Error:</strong>
-                <pre className="mt-1 whitespace-pre-wrap">{lastError}</pre>
-              </div>
-            )}
-
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            </div>
-            <div>
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={handleSignIn} disabled={loading}>
-                Sign in
-              </Button>
-              <Button variant="secondary" onClick={handleSignUp} disabled={loading}>
-                Sign up
-              </Button>
-            </div>
+        <div className="space-y-4">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold text-foreground mb-2">Expense Tracker</h2>
+            <p className="text-muted-foreground">Sign in to sync your expenses across devices</p>
           </div>
-        ) : (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-semibold">Signed in as</h2>
-            <p className="text-sm">{user?.email}</p>
-            <div className="flex gap-2">
-              <Button onClick={async () => { await signOut(); toast.success("Signed out"); }}>
-                Sign out
-              </Button>
-            </div>
+
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <Input 
+              id="email" 
+              type="email"
+              placeholder="your@email.com"
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSignIn()}
+            />
           </div>
-        )}
+          <div>
+            <Label htmlFor="password">Password</Label>
+            <Input 
+              id="password" 
+              type="password"
+              placeholder="At least 6 characters"
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSignIn()}
+            />
+            <p className="text-xs text-muted-foreground mt-1">Minimum 6 characters</p>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Button onClick={handleSignIn} disabled={loading} className="w-full">
+              {loading ? "Signing in..." : "Sign in"}
+            </Button>
+            <Button variant="outline" onClick={handleSignUp} disabled={loading} className="w-full">
+              {loading ? "Creating account..." : "Create account"}
+            </Button>
+          </div>
+        </div>
       </Card>
     </div>
   );

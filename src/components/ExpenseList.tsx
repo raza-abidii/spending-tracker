@@ -1,13 +1,14 @@
 import { Expense, ExpenseCategory } from "./ExpenseForm";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trash2 } from "lucide-react";
+import { Trash2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 
 interface ExpenseListProps {
   expenses: Expense[];
   onDeleteExpense: (id: string) => void;
+  onEditExpense: (expense: Expense) => void;
 }
 
 const categoryColors: Record<ExpenseCategory, string> = {
@@ -30,7 +31,7 @@ const categoryIcons: Record<ExpenseCategory, string> = {
   other: "📦",
 };
 
-export const ExpenseList = ({ expenses, onDeleteExpense }: ExpenseListProps) => {
+export const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense }: ExpenseListProps) => {
   if (expenses.length === 0) {
     return (
       <Card className="p-8 text-center shadow-[var(--shadow-card)]">
@@ -53,7 +54,9 @@ export const ExpenseList = ({ expenses, onDeleteExpense }: ExpenseListProps) => 
                 <h3 className="font-semibold text-foreground truncate">
                   {expense.productName}
                 </h3>
-                <p className="text-sm text-muted-foreground truncate">{expense.place}</p>
+                <p className="text-sm text-muted-foreground truncate">
+                  {expense.place || "No place specified"}
+                </p>
               </div>
             </div>
 
@@ -69,14 +72,24 @@ export const ExpenseList = ({ expenses, onDeleteExpense }: ExpenseListProps) => 
                   {format(new Date(expense.date), "MMM d, yyyy")}
                 </p>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onDeleteExpense(expense.id)}
-                className="text-destructive hover:text-destructive hover:bg-destructive/10"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <div className="flex gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onEditExpense(expense)}
+                  className="text-primary hover:text-primary hover:bg-primary/10"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onDeleteExpense(expense.id)}
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </Card>
