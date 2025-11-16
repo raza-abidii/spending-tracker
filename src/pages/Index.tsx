@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { expenseToRow, rowToExpense } from "@/lib/dbHelpers";
 
 const Index = () => {
   const { user, signOut } = useAuth();
@@ -34,7 +35,8 @@ const Index = () => {
       }
 
       console.log("Saving to cloud:", local);
-      const payload = local.map((e: any) => ({ ...e, user_id: user.id }));
+      const payload = local.map((e: Expense) => expenseToRow(e, user.id));
+      console.log("Converted payload:", payload);
       const { error, data } = await supabase.from("expenses").upsert(payload, { onConflict: "id" });
       
       if (error) {
@@ -51,8 +53,9 @@ const Index = () => {
       }
 
       console.log("Refreshed from cloud:", refreshed);
-      setExpenses(refreshed ?? []);
-      localStorage.setItem("expenses", JSON.stringify(refreshed ?? []));
+      const expenses = (refreshed ?? []).map(rowToExpense);
+      setExpenses(expenses);
+      localStorage.setItem("expenses", JSON.stringify(expenses));
       toast.success(`Saved ${payload.length} expense(s) to cloud successfully!`);
     } catch (err: any) {
       console.error("Save to cloud error:", err);
@@ -101,7 +104,7 @@ const Index = () => {
         // local items not present on server should be uploaded (migrated)
         for (const le of local) {
           if (!serverMap.has(le.id)) {
-            toUpsert.push({ ...le, user_id: user.id });
+            toUpsert.push(expenseToRow(le, user.id));
           }
         }
 
@@ -121,8 +124,9 @@ const Index = () => {
         if (refreshErr) throw refreshErr;
 
         if (!mounted) return;
-        setExpenses(refreshed ?? []);
-        localStorage.setItem("expenses", JSON.stringify(refreshed ?? []));
+        const expenses = (refreshed ?? []).map(rowToExpense);
+        setExpenses(expenses);
+        localStorage.setItem("expenses", JSON.stringify(expenses));
         setSyncing(false);
       } catch (err) {
         if (mounted) setSyncing(false);
@@ -147,7 +151,7 @@ const Index = () => {
     // If user logged in, also save to server
     if (user) {
       try {
-        const payload = { ...expense, user_id: user.id } as any;
+        const payload = expenseToRow(expense, user.id);
         console.log("Inserting new expense to cloud:", payload);
         const { error } = await supabase.from("expenses").insert(payload);
         if (error) {

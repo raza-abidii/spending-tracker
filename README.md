@@ -86,11 +86,14 @@ The app works perfectly without an account using localStorage. To enable cloud s
 3. Paste and run this SQL:
 
 ```sql
--- Create the expenses table
+-- Drop the table if it exists (to recreate with correct columns)
+drop table if exists public.expenses cascade;
+
+-- Create the expenses table (using snake_case, standard for PostgreSQL)
 create table public.expenses (
   id uuid primary key,
   user_id uuid references auth.users(id) on delete cascade,
-  productName text not null,
+  product_name text not null,
   price numeric not null,
   category text not null,
   place text not null,
