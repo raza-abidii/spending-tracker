@@ -33,19 +33,30 @@ const Index = () => {
         return;
       }
 
+      console.log("Saving to cloud:", local);
       const payload = local.map((e: any) => ({ ...e, user_id: user.id }));
-      const { error } = await supabase.from("expenses").upsert(payload, { onConflict: "id" });
-      if (error) throw error;
+      const { error, data } = await supabase.from("expenses").upsert(payload, { onConflict: "id" });
+      
+      if (error) {
+        console.error("Upsert error:", error);
+        throw new Error(`Database error: ${error.message} (${error.code || 'unknown'})`);
+      }
+
+      console.log("Upsert result:", data);
 
       const { data: refreshed, error: refreshErr } = await supabase.from("expenses").select("*").eq("user_id", user.id);
-      if (refreshErr) throw refreshErr;
+      if (refreshErr) {
+        console.error("Refresh error:", refreshErr);
+        throw new Error(`Refresh error: ${refreshErr.message}`);
+      }
 
+      console.log("Refreshed from cloud:", refreshed);
       setExpenses(refreshed ?? []);
       localStorage.setItem("expenses", JSON.stringify(refreshed ?? []));
-      toast.success("Saved to cloud and synced successfully");
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to save to cloud");
+      toast.success(`Saved ${payload.length} expense(s) to cloud successfully!`);
+    } catch (err: any) {
+      console.error("Save to cloud error:", err);
+      toast.error(err?.message || "Failed to save to cloud");
     } finally {
       setSyncing(false);
     }
@@ -95,9 +106,14 @@ const Index = () => {
         }
 
         if (toUpsert.length > 0) {
+          console.log("Migrating local expenses to cloud:", toUpsert);
           // upsert migrated items into server
           const { error: upsertErr } = await supabase.from("expenses").upsert(toUpsert, { onConflict: "id" });
-          if (upsertErr) throw upsertErr;
+          if (upsertErr) {
+            console.error("Migration upsert error:", upsertErr);
+            throw upsertErr;
+          }
+          console.log("Migration successful");
         }
 
         // final authoritative list is server + any local-only that were uploaded
@@ -132,10 +148,16 @@ const Index = () => {
     if (user) {
       try {
         const payload = { ...expense, user_id: user.id } as any;
+        console.log("Inserting new expense to cloud:", payload);
         const { error } = await supabase.from("expenses").insert(payload);
-        if (error) console.error("Failed to save expense to server", error);
+        if (error) {
+          console.error("Failed to save expense to server:", error);
+          toast.error(`Failed to sync: ${error.message}`);
+        } else {
+          console.log("Expense saved to cloud successfully");
+        }
       } catch (e) {
-        console.error(e);
+        console.error("Exception saving expense:", e);
       }
     }
   };
