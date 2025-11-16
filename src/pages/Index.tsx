@@ -148,29 +148,29 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Header */}
-        <div className="mb-8 text-center">
-          <div className="flex items-center justify-between gap-3 mb-3">
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-primary rounded-xl">
                 <Wallet className="h-8 w-8 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold text-foreground mb-2">Expense Tracker</h1>
-                <p className="text-muted-foreground text-lg">Track your spending, stay on budget</p>
+                <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-1">Expense Tracker</h1>
+                <p className="text-muted-foreground text-sm sm:text-lg">Track your spending, stay on budget</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <Button variant="outline" onClick={handleSaveToCloud} disabled={syncing}>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+              <Button variant="outline" onClick={handleSaveToCloud} disabled={syncing} className="w-full sm:w-auto">
                 {syncing ? "Saving..." : "Save to Cloud"}
               </Button>
 
               {!user ? (
-                <Link to="/login">
-                  <Button>Login</Button>
+                <Link to="/login" className="w-full sm:w-auto">
+                  <Button className="w-full sm:w-auto">Login</Button>
                 </Link>
               ) : (
-                <Button variant="ghost" onClick={async () => { await signOut(); toast.success("Signed out"); }}>
+                <Button variant="ghost" onClick={async () => { await signOut(); toast.success("Signed out"); }} className="w-full sm:w-auto">
                   Logout
                 </Button>
               )}
