@@ -15,6 +15,33 @@ const LoginPage: React.FC = () => {
   const [showDebug, setShowDebug] = useState(true);
   const [lastError, setLastError] = useState<string | null>(null);
 
+  const testConnection = async () => {
+    setLastError(null);
+    try {
+      const url = import.meta.env.VITE_SUPABASE_URL;
+      toast("Testing connection to " + url);
+      
+      // Test 1: Basic fetch
+      const response = await fetch(url + '/auth/v1/health', { 
+        method: 'GET',
+        mode: 'cors',
+      });
+      
+      if (response.ok) {
+        toast.success("Connection test passed!");
+        setLastError("✅ Connection successful");
+      } else {
+        toast.error("Connection failed: " + response.status);
+        setLastError(`HTTP ${response.status}: ${response.statusText}`);
+      }
+    } catch (err) {
+      console.error("Connection test failed:", err);
+      const msg = (err as any)?.message || String(err);
+      setLastError("Connection test failed: " + msg);
+      toast.error("Connection test failed: " + msg);
+    }
+  };
+
   const handleSignIn = async () => {
     if (!email || !password) {
       toast.error("Please enter email and password");
@@ -84,7 +111,10 @@ const LoginPage: React.FC = () => {
                 <div><strong>Anon Key:</strong> {import.meta.env.VITE_SUPABASE_ANON_KEY ? `✅ ${import.meta.env.VITE_SUPABASE_ANON_KEY.slice(0,20)}...` : "❌ NOT SET"}</div>
                 <div><strong>Supabase client:</strong> {supabase ? "✅ Initialized" : "❌ Not initialized"}</div>
                 <div><strong>User:</strong> {user ? `✅ ${user.email}` : "Not signed in"}</div>
-                <Button variant="ghost" size="sm" onClick={() => setShowDebug(false)} className="mt-2">Hide Debug</Button>
+                <div className="flex gap-2 mt-2">
+                  <Button variant="outline" size="sm" onClick={testConnection}>Test Connection</Button>
+                  <Button variant="ghost" size="sm" onClick={() => setShowDebug(false)}>Hide Debug</Button>
+                </div>
               </div>
             )}
 

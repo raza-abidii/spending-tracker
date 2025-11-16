@@ -9,8 +9,22 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   // log host for debugging (do not log keys)
   try {
     const u = new URL(SUPABASE_URL);
-    console.debug("Supabase host:", u.host);
-  } catch {}
+    console.log("Supabase connecting to:", u.host);
+  } catch (e) {
+    console.error("Invalid Supabase URL:", SUPABASE_URL);
+  }
 }
 
-export const supabase = createClient(SUPABASE_URL || "", SUPABASE_ANON_KEY || "");
+export const supabase = createClient(SUPABASE_URL || "", SUPABASE_ANON_KEY || "", {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce',
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'supabase-js-web',
+    },
+  },
+});
