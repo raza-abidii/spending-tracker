@@ -21,15 +21,19 @@ const LoginPage: React.FC = () => {
       const url = import.meta.env.VITE_SUPABASE_URL;
       toast("Testing connection to " + url);
       
-      // Test 1: Basic fetch
-      const response = await fetch(url + '/auth/v1/health', { 
+      // Test 1: Basic fetch to health endpoint (doesn't require auth)
+      const response = await fetch(url + '/rest/v1/', { 
         method: 'GET',
         mode: 'cors',
+        headers: {
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        }
       });
       
-      if (response.ok) {
-        toast.success("Connection test passed!");
-        setLastError("✅ Connection successful");
+      if (response.ok || response.status === 401) {
+        // 401 is actually OK here - it means we reached the server
+        toast.success("✅ Connection successful! Server is reachable.");
+        setLastError("✅ Connection successful. Status: " + response.status);
       } else {
         toast.error("Connection failed: " + response.status);
         setLastError(`HTTP ${response.status}: ${response.statusText}`);
@@ -37,7 +41,7 @@ const LoginPage: React.FC = () => {
     } catch (err) {
       console.error("Connection test failed:", err);
       const msg = (err as any)?.message || String(err);
-      setLastError("Connection test failed: " + msg);
+      setLastError("❌ Connection test failed: " + msg);
       toast.error("Connection test failed: " + msg);
     }
   };
