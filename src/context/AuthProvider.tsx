@@ -15,16 +15,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     // check initial session
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (error) console.error("getSession error", error);
       setUser(data.session?.user ?? null);
-    });
+    }).catch((e) => console.error("getSession exception", e));
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log("Auth state changed", _event, session);
       setUser(session?.user ?? null);
     });
 
     return () => {
-      sub.subscription.unsubscribe();
+      try {
+        sub.subscription.unsubscribe();
+      } catch (e) {
+        // ignore
+      }
     };
   }, []);
 

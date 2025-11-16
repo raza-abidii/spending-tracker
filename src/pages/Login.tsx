@@ -13,19 +13,49 @@ const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   const handleSignIn = async () => {
+    if (!email || !password) {
+      toast.error("Please enter email and password");
+      return;
+    }
+
     setLoading(true);
-    const { error } = await signIn(email, password);
-    setLoading(false);
-    if (error) toast.error(error.message);
-    else toast.success("Signed in");
+    try {
+      const res = await signIn(email, password);
+      setLoading(false);
+      if ((res as any).error) {
+        console.error("Sign in error:", res);
+        toast.error((res as any).error.message || "Sign in failed");
+      } else {
+        toast.success("Signed in");
+      }
+    } catch (err) {
+      setLoading(false);
+      console.error("Sign in exception:", err);
+      toast.error((err as any)?.message || "Sign in failed (network)");
+    }
   };
 
   const handleSignUp = async () => {
+    if (!email || !password) {
+      toast.error("Please enter email and password");
+      return;
+    }
+
     setLoading(true);
-    const { error } = await signUp(email, password);
-    setLoading(false);
-    if (error) toast.error(error.message);
-    else toast.success("Sign up successful. Check your email for confirmation if required.");
+    try {
+      const res = await signUp(email, password);
+      setLoading(false);
+      if ((res as any).error) {
+        console.error("Sign up error:", res);
+        toast.error((res as any).error.message || "Sign up failed");
+      } else {
+        toast.success("Sign up successful. Check your email for confirmation if required.");
+      }
+    } catch (err) {
+      setLoading(false);
+      console.error("Sign up exception:", err);
+      toast.error((err as any)?.message || "Sign up failed (network)");
+    }
   };
 
   return (
